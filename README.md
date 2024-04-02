@@ -2,6 +2,7 @@
 
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
  ![GitHub Release](https://img.shields.io/github/v/release/maximilianbehr/cuSignm)
+ [![DOI](https://zenodo.org/badge/780356669.svg)](https://zenodo.org/doi/10.5281/zenodo.10908661)
 
 **Copyright:** Maximilian Behr
 
