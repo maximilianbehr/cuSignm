@@ -272,10 +272,17 @@ static int cusignm_Halley(const int n, const T *A, void *d_buffer, void *h_buffe
          *-----------------------------------------------------------------------------*/
         // workspace query for LU factorization
         CHECK_CUSOLVER(cusolverDnXgetrf_bufferSize(cusolverH, params, n, n, cusignm_traits<T>::dataType, Stmp, n, cusignm_traits<T>::computeType, &lworkdevice, &lworkhost));
+
         // compute LU factorization
         CHECK_CUSOLVER(cusolverDnXgetrf(cusolverH, params, n, n, cusignm_traits<T>::dataType, Stmp, n, d_ipiv, cusignm_traits<T>::computeType, d_work, lworkdevice, h_work, lworkhost, d_info));
-        // solve the linear system
+        // int d_info_h;
+        // CHECK_CUDA(cudaMemcpy(&d_info_h, d_info, sizeof(int), cudaMemcpyDeviceToHost));
+        // printf("iter=%d, d_info=%d\n", iter, d_info_h);
+
+        //  solve the linear system
         CHECK_CUSOLVER(cusolverDnXgetrs(cusolverH, params, CUBLAS_OP_N, n, n, cusignm_traits<T>::dataType, Stmp, n, d_ipiv, cusignm_traits<T>::computeType, Stmp2, n, d_info));
+        // CHECK_CUDA(cudaMemcpy(&d_info_h, d_info, sizeof(int), cudaMemcpyDeviceToHost));
+        // printf("iter=%d, d_info=%d\n", iter, d_info_h);
 
         /*-----------------------------------------------------------------------------
          * update S as S <- Sold*(I + c * Sold*Sold)\(a * I + b * Sold*Sold)
@@ -288,13 +295,21 @@ static int cusignm_Halley(const int n, const T *A, void *d_buffer, void *h_buffe
         Scalar diffSSold, nrmS;
         CHECK_CUSIGNM(cusignm_diffnormFro(n, n, S, Sold, &diffSSold));
         CHECK_CUSIGNM(cusignm_normFro(n, n, S, &nrmS));
-        printf("iter=%d, diffSSold=%e, nrmS=%e, rel. change=%e\n", iter, diffSSold, nrmS, diffSSold / nrmS);
+        // printf("iter=%d, diffSSold=%e, nrmS=%e, rel. change=%e\n", iter, diffSSold, nrmS, diffSSold / nrmS);
 
         /*-----------------------------------------------------------------------------
          * stopping criteria
          *-----------------------------------------------------------------------------*/
         // relative change of S and Sold is smaller than tolerance
         if (diffSSold < nrmS * tol) {
+            break;
+        }
+
+        // NaN detected
+        if (isnan(diffSSold) || isnan(nrmS)) {
+            fprintf(stderr, "%s-%s:%d no convergence - NaN detected\n", __func__, __FILE__, __LINE__);
+            fflush(stderr);
+            ret = -1;
             break;
         }
 

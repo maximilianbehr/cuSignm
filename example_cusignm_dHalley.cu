@@ -31,7 +31,7 @@ int main(void) {
      * variables
      *-----------------------------------------------------------------------------*/
     int ret = 0;            // return value
-    const int n = 100;      // size of the input matrix A n-by-n
+    const int n = 10;       // size of the input matrix A n-by-n
     double *A, *S;          // input matrix and sign matrix
     void *d_buffer = NULL;  // device buffer
     void *h_buffer = NULL;  // host buffer

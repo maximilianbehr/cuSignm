@@ -32,7 +32,7 @@ int main(void) {
      *-----------------------------------------------------------------------------*/
     int ret = 0;            // return value
     const int n = 10;       // size of the input matrix A n-by-n
-    float *A, *S;           // input matrix and sign matrix
+    cuComplex *A, *S;       // input matrix and sign matrix
     void *d_buffer = NULL;  // device buffer
     void *h_buffer = NULL;  // host buffer
 
@@ -48,7 +48,7 @@ int main(void) {
     srand(0);
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            A[i + j * n] = (float)rand() / RAND_MAX;
+            A[i + j * n] = cuComplex({(float)rand() / RAND_MAX, (float)rand() / RAND_MAX});
         }
     }
 
@@ -56,7 +56,7 @@ int main(void) {
      * perform a workspace query and allocate memory buffer on the host and device
      *-----------------------------------------------------------------------------*/
     size_t d_bufferSize = 0, h_bufferSize = 0;
-    cusignm_sHalleyBufferSize(n, &d_bufferSize, &h_bufferSize);
+    cusignm_cNewtonBufferSize(n, &d_bufferSize, &h_bufferSize);
 
     if (d_bufferSize > 0) {
         cudaMalloc((void **)&d_buffer, d_bufferSize);
@@ -69,7 +69,7 @@ int main(void) {
     /*-----------------------------------------------------------------------------
      *  compute Sign Function S = sign(A)
      *-----------------------------------------------------------------------------*/
-    cusignm_sHalley(n, A, d_buffer, h_buffer, S);
+    cusignm_cNewton(n, A, d_buffer, h_buffer, S);
 
     /*-----------------------------------------------------------------------------
      * check sign function ||S^2 - I||_F
@@ -77,15 +77,15 @@ int main(void) {
     float fronrmdiff = 0.0f;
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            float sum = 0.0f;
+            cuComplex sum = cuComplex{0.0f, 0.0f};
             for (int k = 0; k < n; ++k) {
-                sum += S[i + k * n] * S[k + j * n];
+                sum = cuCaddf(sum, cuCmulf(S[i + k * n], S[k + j * n]));
             }
             if (i == j) {
-                sum -= 1.0f;
+                sum = cuCsubf(sum, cuComplex{1.0f, 0.0f});
             }
-            sum = fabs(sum);
-            fronrmdiff += sum * sum;
+            float diff = cuCabsf(sum);
+            fronrmdiff += diff * diff;
         }
     }
     float error = sqrtf(fronrmdiff / sqrtf((float)n));

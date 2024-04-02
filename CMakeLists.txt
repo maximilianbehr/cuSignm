@@ -46,7 +46,7 @@ install(TARGETS cusignm DESTINATION lib)
 install(FILES cusignm.h DESTINATION include)
 
 # examples
-foreach(x d)
+foreach(x s d c z)
   # Newton
   add_executable(example_cusignm_${x}Newton example_cusignm_${x}Newton.cu)
   target_link_libraries(example_cusignm_${x}Newton PUBLIC cusignm)

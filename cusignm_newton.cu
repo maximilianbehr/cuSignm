@@ -227,13 +227,20 @@ static int cusignm_Newton(const int n, const T *A, void *d_buffer, void *h_buffe
         Scalar diffSSold, nrmS;
         CHECK_CUSIGNM(cusignm_diffnormFro(n, n, S, Sold, &diffSSold));
         CHECK_CUSIGNM(cusignm_normFro(n, n, S, &nrmS));
-        printf("iter=%d, diffSSold=%e, nrmS=%e, rel. change=%e\n", iter, diffSSold, nrmS, diffSSold / nrmS);
+        // printf("iter=%d, diffSSold=%e, nrmS=%e, rel. change=%e\n", iter, diffSSold, nrmS, diffSSold / nrmS);
 
         /*-----------------------------------------------------------------------------
          * stopping criteria
          *-----------------------------------------------------------------------------*/
         // relative change of S and Sold is smaller than tolerance
         if (diffSSold < nrmS * tol) {
+            break;
+        }
+
+        if (isnan(diffSSold) || isnan(nrmS)) {
+            fprintf(stderr, "%s-%s:%d no convergence - NaN detected\n", __func__, __FILE__, __LINE__);
+            fflush(stderr);
+            ret = -1;
             break;
         }
 
